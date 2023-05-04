@@ -94,17 +94,22 @@ def coord_list(input, player):
 # need to turn them to greedy moves with use of heuristic
 
 def spawn(input: dict[tuple, tuple], coord: tuple, player: str):
+    if coord in input:
+        coord = (random.randint(0, 6), random.randint(0, 6))
+    input[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
 def make_move(input: dict[tuple, tuple], player: str):
     cell_list = coord_list(input, player)
     if len(cell_list) == 1:
-        return SpawnAction(HexPos(cell_list[0]+1, cell_list[1]+1))
+        input[(cell_list[0][0]+1, cell_list[0][1]+1)] = (player, 1)
+        return SpawnAction(HexPos(cell_list[0][0]+1, cell_list[0][1]+1)) # will eventually go out of bounds
     else:
         return simple_spread(input, player)
 
 
-def simple_spread(board: 'dict[tuple, tuple]', color: 'PlayerColor'):
+def simple_spread(board: dict[tuple, tuple], color: 'PlayerColor'):
+    print(list(board.keys()))
     blind_pick = list(board.keys())[random.randint(0, len(list(board.keys())))]
     blind_direction = list(HexDir)[random.randint(0, len(list(HexDir)))]
     return SpreadAction(HexPos(blind_pick[0], blind_pick[1]), blind_direction)

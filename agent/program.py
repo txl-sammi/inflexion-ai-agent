@@ -26,6 +26,10 @@ class Agent:
         self._board = {}
         self._round = 0
 
+        if 'board' not in referee:
+            referee['board'] = {}
+        
+
 
         match color:
             case PlayerColor.RED:
@@ -38,10 +42,12 @@ class Agent:
         Return the next action to take.
         """
 
-        if self._round == 0 or self._round == 1:
+        if self._round == 0: #first move
+            self._round += 1
             return spawn(self._board, (random.randint(0, 6), random.randint(0, 6)), self._color)
-        else:
-            return makeMove(self._board, self._color)
+        else: 
+            self._round += 1
+            return make_move(self._board, self._color)
 
         # match self._color:
         #     case PlayerColor.RED:
