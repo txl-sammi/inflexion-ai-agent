@@ -3,7 +3,7 @@
 
 from referee.game import \
     PlayerColor, Action, SpawnAction, SpreadAction, HexPos, HexDir
-
+from .utils import spawn, make_move
 
 # This is the entry point for your game playing agent. Currently the agent
 # simply spawns a token at the centre of the board if playing as RED, and
@@ -11,12 +11,22 @@ from referee.game import \
 # intended to serve as an example of how to use the referee API -- obviously
 # this is not a valid strategy for actually playing the game!
 
+import random
+
 class Agent:
     def __init__(self, color: PlayerColor, **referee: dict):
         """
         Initialise the agent.
         """
         self._color = color
+
+
+        # determine Player
+
+        self._board = {}
+        self._round = 0
+
+
         match color:
             case PlayerColor.RED:
                 print("Testing: I am playing as red")
@@ -27,12 +37,18 @@ class Agent:
         """
         Return the next action to take.
         """
-        match self._color:
-            case PlayerColor.RED:
-                return SpawnAction(HexPos(3, 3))
-            case PlayerColor.BLUE:
-                # This is going to be invalid... BLUE never spawned!
-                return SpreadAction(HexPos(3, 3), HexDir.Up)
+
+        if self._round == 0 or self._round == 1:
+            return spawn(self._board, (random.randint(0, 6), random.randint(0, 6)), self._color)
+        else:
+            return makeMove(self._board, self._color)
+
+        # match self._color:
+        #     case PlayerColor.RED:
+        #         return SpawnAction(HexPos(3, 3))
+        #     case PlayerColor.BLUE:
+        #         # This is going to be invalid... BLUE never spawned!
+        #         return SpreadAction(HexPos(3, 3), HexDir.Up)
 
     def turn(self, color: PlayerColor, action: Action, **referee: dict):
         """
@@ -45,3 +61,5 @@ class Agent:
             case SpreadAction(cell, direction):
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
+
+
