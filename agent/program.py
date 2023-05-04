@@ -14,22 +14,16 @@ from .utils import spawn, make_move
 import random
 
 class Agent:
+
+    board = {}
+
     def __init__(self, color: PlayerColor, **referee: dict):
         """
         Initialise the agent.
         """
         self._color = color
-
-
-        # determine Player
-
-        self._board = {}
         self._round = 0
-
-        if 'board' not in referee:
-            referee['board'] = {}
-        
-
+        # determine Player
 
         match color:
             case PlayerColor.RED:
@@ -44,10 +38,10 @@ class Agent:
 
         if self._round == 0: #first move
             self._round += 1
-            return spawn(self._board, (random.randint(0, 6), random.randint(0, 6)), self._color)
+            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._color)
         else: 
             self._round += 1
-            return make_move(self._board, self._color)
+            return make_move(self.board, self._color)
 
         # match self._color:
         #     case PlayerColor.RED:

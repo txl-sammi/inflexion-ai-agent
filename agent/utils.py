@@ -93,10 +93,11 @@ def coord_list(input, player):
 # essentially random moves regardless of player
 # need to turn them to greedy moves with use of heuristic
 
-def spawn(input: dict[tuple, tuple], coord: tuple, player: str):
-    if coord in input:
+def spawn(board: dict[tuple, tuple], coord: tuple, player: str):
+
+    if coord in board:
         coord = (random.randint(0, 6), random.randint(0, 6))
-    input[coord] = (player, 1)
+    board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
 def make_move(input: dict[tuple, tuple], player: str):
