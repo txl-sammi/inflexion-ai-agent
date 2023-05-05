@@ -1,6 +1,6 @@
 # COMP30024 Artificial Intelligence, Semester 1 2023
 # Project Part A: Single Player Infexion
-
+from queue import PriorityQueue
 import random
 
 from referee.game import \
@@ -81,38 +81,262 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
     return output
 
 
-def coord_list(input, player):
-    result_list = list()
-    for cell in input.keys():
-        if input[cell][0] == player:
-            result_list.append(cell)
-    return result_list
-
-
 # all function below are for a DUMB players (Blue and RED)
 # essentially random moves regardless of player
 # need to turn them to greedy moves with use of heuristic
 
-def spawn(board: dict[tuple, tuple], coord: tuple, player: str):
-
+def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy):
     if coord in board:
         coord = (random.randint(0, 6), random.randint(0, 6))
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
-def make_move(input: dict[tuple, tuple], player: str):
-    cell_list = coord_list(input, player)
-    if len(cell_list) == 1:
-        input[(cell_list[0][0]+1, cell_list[0][1]+1)] = (player, 1)
-        return SpawnAction(HexPos(cell_list[0][0]+1, cell_list[0][1]+1)) # will eventually go out of bounds
+def make_move(input: dict[tuple, tuple], player: str, enemy):
+    playerCell_list = coord_list(input, player)
+
+    # print("cell_list ")
+    # print(cell_list)
+    # print(len(playerCell_list))
+
+    distance_dict = dict()
+
+    for playerCell in playerCell_list:
+        enemyCell = find_closest_cell(input, playerCell, enemy)
+
+        distance_dict[playerCell] = (enemyCell,
+                                  travel_distance(playerCell[0], playerCell[1],
+                                                  enemyCell[0], enemyCell[1],
+                                                  input[playerCell][1]))
+    # determine direction and add spread solution
+    playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
+    direction = determine_direction(playerCell, distance_dict[playerCell][0])
+
+    # print("direction")
+    # print(direction)
+
+
+    if len(playerCell_list) == 1:
+        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player)
     else:
-        return simple_spread(input, player)
+        return simple_spread(input , playerCell, direction)
 
 
-def simple_spread(board: dict[tuple, tuple], color: 'PlayerColor'):
-    print(list(board.keys()))
-    blind_pick = list(board.keys())[random.randint(0, len(list(board.keys())))]
-    blind_direction = list(HexDir)[random.randint(0, len(list(HexDir)))]
-    return SpreadAction(HexPos(blind_pick[0], blind_pick[1]), blind_direction)
+def simple_spread(board: dict[tuple, tuple], playerCell, direction):
+    return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
+
+def coord_list(input, player):
+    result_list = list()
+
+    # print("input")
+    # print(input)
+    #
+    # print("player")
+    # print(player)
+
+    for cell in input.keys():
+        if input[cell][0] == player:
+            result_list.append(cell)
+    return result_list
+
+def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy):
+    directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
+    visited = []
+    queue = PriorityQueue()
+    # add start cell with distance 0
+    queue.put((0, cell))
+
+    # greedy best-first search algorithm
+    while queue:
+        current_dist, current_cell = queue.get()
+        if current_cell in input:
+            if input[current_cell][0] == enemy:
+                return current_cell
+
+        for d in directions:
+            next_cell = determine_next_cell(current_cell, d)
+            if next_cell not in visited:
+                visited.append(next_cell)
+                # calculate the distance to the target cell using a heuristic function
+                estimated_dist = calculate_heuristic(next_cell, input, enemy)
+                # add the cell to the priority queue using heuristic as priority
+                queue.put((estimated_dist, next_cell))
+
+def determine_next_cell(current_cell: tuple, direction: tuple):
+    # hex directions: (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)
+
+    current_x = current_cell[0]
+    current_y = current_cell[1]
+
+    next_x = current_x + direction[0]
+    next_y = current_y + direction[1]
+
+    # check if the coordinates wrap around the board
+    if next_x > 6:
+        next_x -= 7
+    elif next_x < 0:
+        next_x += 7
+    elif next_y > 6:
+        next_y -= 7
+    elif next_y < 0:
+        next_y += 7
+
+    return (next_x, next_y)
 
 
+
+def calculate_heuristic(cell: tuple, input: dict[tuple, tuple], enemy):
+    blueCell_list = coord_list(input, enemy)
+
+    # print("blueCell_list")
+    # print(blueCell_list)
+
+    distance_dict = dict()
+    for blue_cell in blueCell_list:
+        distance = calc_distance(cell[0], cell[1], blue_cell[0], blue_cell[1])
+
+        # print("distance")
+        # print(distance)
+
+        distance_dict[blue_cell] = distance
+    min_distance_cell = min(distance_dict, key=distance_dict.get)
+    return distance_dict[min_distance_cell]
+
+
+def calc_distance(x1, y1, x2, y2):
+    # distance of two points
+    # calculate new distance if wrap around
+    dx, dy = wrap_check((x1 - x2), (y1 - y2))
+
+    # hexoganol distance check if points in a straight line (fastest route)
+    if (x1 < x2 and y1 < y2) or (x1 > x2 and y1 > y2):
+        return abs(dx) + abs(dy)
+    else:
+        return max(abs(dx), abs(dy))
+
+
+def wrap_check(dx, dy):
+    dx_wrap = 100
+    dy_wrap = 100
+
+    # check for wrap around
+    if dx > 3.5:
+        dx_wrap = 7 - dx
+    elif dx < -3.5:
+        dx_wrap = 7 + dx
+
+    if dy > 3.5:
+        dy_wrap = 7 - dy
+    elif dy < -3.5:
+        dy_wrap = 7 + dy
+
+    # return the minimum of the two
+    return min(dx, dx_wrap), min(dy, dy_wrap)
+
+
+
+
+def travel_distance(x1, y1, x2, y2, power):
+    # how long i should travel in a certain direction until x1=x2 and y1=y2
+    direction = determine_direction((x1, y1), (x2, y2))
+    reached = False
+    cell = (x1, y1)
+    distance = 0
+    next_cell = determine_next_cell(cell, (direction[0] * power, direction[1] * power))
+
+    while reached == False:
+        distance += 1
+        if next_cell == (x2, y2):
+            reached = True
+            break
+        direction = determine_direction(next_cell, (x2, y2))
+        next_cell = determine_next_cell(next_cell, direction)
+    return distance
+
+
+def determine_direction(start: tuple, target: tuple):
+    x1 = start[0]
+    x2 = target[0]
+    y1 = start[1]
+    y2 = target[1]
+
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # check for wrap around
+    if dx > 3.5:
+        dx -= 7
+    elif dx < -3.5:
+        dx += 7
+
+    if dy > 3.5:
+        dy -= 7
+    elif dy < -3.5:
+        dy += 7
+
+    # determine direction to take
+    if dx == 0:
+        if dy < 0:
+            return (0, -1)  # north-west
+        else:
+            return (0, 1)  # south-east
+    elif dx > 0:
+        if dy >= 0:
+            if dx > dy:
+                return (1, 0)  # north-east
+            else:
+                return (0, 1)  # south-east
+        else:
+            return (1, -1)  # north
+    else:  # dx < 0
+        if dy <= 0:
+            if dx > dy:
+                return (0, -1)  # north-west
+            else:
+                return (-1, 0)  # south-west
+        else:  # dy > 0
+            return (-1, 1)  # south
+
+
+
+def determine_new_direction(start: tuple, target: tuple):
+    x1 = start[0]
+    x2 = target[0]
+    y1 = start[1]
+    y2 = target[1]
+
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # check for wrap around
+    if dx > 3.5:
+        dx -= 7
+    elif dx < -3.5:
+        dx += 7
+
+    if dy > 3.5:
+        dy -= 7
+    elif dy < -3.5:
+        dy += 7
+
+    # determine direction to take
+    if dx == 0:
+        if dy < 0:
+            return "UpLeft"  # north-west
+        else:
+            return "DownRight" # south-east
+    elif dx > 0:
+        if dy >= 0:
+            if dx > dy:
+                return "UpRight"  # north-east
+            else:
+                return "DownRight"  # south-east
+        else:
+            return "Up"  # north
+    else:  # dx < 0
+        if dy <= 0:
+            if dx > dy:
+                return "UpLeft"  # north-west
+            else:
+                return "DownLeft"  # south-west
+        else:  # dy > 0
+            return "Down"  # south
