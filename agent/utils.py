@@ -94,6 +94,7 @@ def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy):
 
 def make_move(input: dict[tuple, tuple], player: str, enemy):
     playerCell_list = coord_list(input, player)
+    total_power = count_power(input)
 
     # print("cell_list ")
     # print(cell_list)
@@ -120,7 +121,10 @@ def make_move(input: dict[tuple, tuple], player: str, enemy):
 
 
     if len(playerCell_list) == 1:
-        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
+        if total_power >= 48:
+            return simple_spread(input , playerCell, direction)
+        else:
+            return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
     else:
         return simple_spread(input , playerCell, direction)
 
@@ -368,3 +372,13 @@ def spread(input: dict[tuple, tuple], action: tuple, colour):
             current_cell = next_cell
         # update cell -> empty it
         input.pop(cell)
+
+def count_power(board: dict[tuple, tuple]):
+    total_power = 0
+
+    values = list(board.values())
+
+    for index, tuple in enumerate(values):
+        total_power += values[index][1]
+
+    return total_power
