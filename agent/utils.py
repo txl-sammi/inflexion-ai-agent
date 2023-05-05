@@ -87,7 +87,8 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy):
     if coord in board:
-        coord = (random.randint(0, 6), random.randint(0, 6))
+        while coord in board:
+            coord = (random.randint(0, 6), random.randint(0, 6))
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
@@ -97,6 +98,8 @@ def make_move(input: dict[tuple, tuple], player: str, enemy):
     # print("cell_list ")
     # print(cell_list)
     # print(len(playerCell_list))
+
+    print(playerCell_list)
 
     distance_dict = dict()
 
@@ -116,7 +119,7 @@ def make_move(input: dict[tuple, tuple], player: str, enemy):
 
 
     if len(playerCell_list) == 1:
-        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player)
+        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
     else:
         return simple_spread(input , playerCell, direction)
 
@@ -127,10 +130,10 @@ def simple_spread(board: dict[tuple, tuple], playerCell, direction):
 def coord_list(input, player):
     result_list = list()
 
-    # print("input")
+    # # print("input")
     # print(input)
-    #
-    # print("player")
+    # #
+    # # print("player")
     # print(player)
 
     for cell in input.keys():
@@ -340,3 +343,27 @@ def determine_new_direction(start: tuple, target: tuple):
                 return "DownLeft"  # south-west
         else:  # dy > 0
             return "Down"  # south
+
+def spread(input: dict[tuple, tuple], action: tuple):
+    cell = (action[0], action[1])
+    direction = (action[2], action[3])
+    if cell in input:
+        power = input[cell][1]
+        current_cell = cell
+
+        # iterate through the cells that are to be covered, and check for blue cells
+        for i in range(power):
+            next_cell = determine_next_cell(current_cell, direction)
+            if next_cell in input:
+                next_power = input[next_cell][1]
+                # if cell to spread to has power of 6, empty cell
+                if next_power == 6:
+                    input.pop(next_cell)
+                # if blue cell -> capture, if red cell -> update cells to reflect board state
+                else:
+                    input[next_cell] = ('r', next_power + 1)
+            else:
+                input[next_cell] = ('r', 1)
+            current_cell = next_cell
+        # update cell -> empty it
+        input.pop(cell)

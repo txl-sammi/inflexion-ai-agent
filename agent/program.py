@@ -3,7 +3,7 @@
 
 from referee.game import \
     PlayerColor, Action, SpawnAction, SpreadAction, HexPos, HexDir
-from .utils import spawn, make_move
+from .utils import spawn, make_move, spread
 
 
 # This is the entry point for your game playing agent. Currently the agent
@@ -22,13 +22,20 @@ class Agent:
         """
         Initialise the agent.
         """
+
         self._color = color
         self._round = 0
+        
+
         # determine Player
         match color:
             case PlayerColor.RED:
+                self._player = "RED"
+                self._enemy = "BLUE"
                 print("Testing: I am playing as red")
             case PlayerColor.BLUE:
+                self._player = "BLUE"
+                self._enemy = "RED"
                 print("Testing: I am playing as blue")
 
     def action(self, **referee: dict) -> Action:
@@ -36,19 +43,14 @@ class Agent:
         Return the next action to take.
         """
 
-        if self._color == "RED":
-            player = "RED"
-            enemy = "BLUE"
-        else:
-            enemy= "RED"
-            player = "BLUE"
+        
 
         if (self._round == 0 or self._round == 1): #first move
             self._round += 1
-            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
+            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy)
         else:
             self._round += 1
-            return make_move(self.board, player,enemy)
+            return make_move(self.board, self._player, self._enemy)
 
         # match self._color:
         #     case PlayerColor.RED:
@@ -73,8 +75,7 @@ class Agent:
                 direction_r = direction.value.r
                 direction_q = direction.value.q
 
-                self._board = simple_spread(
-                    self._board, (cell.r, cell.q), (direction_r, direction_q))
+                spread(self.board, (cell.r, cell.q, direction_r, direction_q))
 
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
