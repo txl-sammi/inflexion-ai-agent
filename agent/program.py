@@ -75,7 +75,7 @@ class Agent:
                 direction_r = direction.value.r
                 direction_q = direction.value.q
 
-                spread(self.board, (cell.r, cell.q, direction_r, direction_q))
+                spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
 
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass

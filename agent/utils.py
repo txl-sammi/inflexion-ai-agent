@@ -112,6 +112,7 @@ def make_move(input: dict[tuple, tuple], player: str, enemy):
                                                   input[playerCell][1]))
     # determine direction and add spread solution
     playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
+    print(playerCell)
     direction = determine_direction(playerCell, distance_dict[playerCell][0])
 
     # print("direction")
@@ -344,7 +345,7 @@ def determine_new_direction(start: tuple, target: tuple):
         else:  # dy > 0
             return "Down"  # south
 
-def spread(input: dict[tuple, tuple], action: tuple):
+def spread(input: dict[tuple, tuple], action: tuple, colour):
     cell = (action[0], action[1])
     direction = (action[2], action[3])
     if cell in input:
@@ -361,9 +362,9 @@ def spread(input: dict[tuple, tuple], action: tuple):
                     input.pop(next_cell)
                 # if blue cell -> capture, if red cell -> update cells to reflect board state
                 else:
-                    input[next_cell] = ('r', next_power + 1)
+                    input[next_cell] = (colour, next_power + 1)
             else:
-                input[next_cell] = ('r', 1)
+                input[next_cell] = (colour, 1)
             current_cell = next_cell
         # update cell -> empty it
         input.pop(cell)
