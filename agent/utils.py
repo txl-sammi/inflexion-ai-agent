@@ -86,9 +86,12 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # need to turn them to greedy moves with use of heuristic
 
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
+    print(coord)
+    print(board)
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
+    print(coord)
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
@@ -308,12 +311,16 @@ def count_color_power(board: dict[tuple, tuple], color):
             total_power += values[index][1]
     return total_power
 
+
+
 # mini max stuff
 
 def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
     # base case (game over)
-    if (depth ==  1) or (game_over(player, enemy, game_state)):
+    if (depth ==  2) or (game_over(player, enemy, game_state)):
         return evaluate_state(input, player, enemy)
+    
+    best_moves = []
     # current player is to be maximised
     if max_player == True:
         max_eval = float('-inf')
@@ -324,6 +331,27 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
         # two types, Spawn or spread (they need to be identified)
         # actions can be a list of tuples, where spawn and spread moves are distinguished
         moves = generate_moves(input, player)
+
+        # get best three moves
+        for move in moves:
+            temp_board = make_board(input, move, player)
+
+            eval_value = evaluate_state(temp_board, player, enemy)
+
+            if (eval_value > max_eval):
+                max_eval = eval_value
+                best_moves.append(move)     
+        
+        final_moves = best_moves[-3:]
+
+        # then test other board states
+        eval_values = []
+        for move in final_moves:
+            temp_board = make_board(input, move, player)
+            eval_values.append(mini_max(temp_board, depth + 1, False, player, enemy, game_state))
+
+        # return desired - not sure how to approach from here 
+
 #           apply each of th new action to a COPY of the current state of the board
 #           recursively apply MiniMax to the new boards (maximizing_player = False)
 #           get the best evaluation value from each of these (best being max eval)
@@ -336,6 +364,17 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 #           recursively apply MiniMax to the new boards (maximizing_player = True)
 #           get the worst evaluation value from each of these (worst being min eval)
 #           return min eval
+
+def make_board(input, move, player):
+    temp_board = input.copy()
+
+    if move[0] == "SPAWN":
+        temp_board[move[1]] = (player, 1)
+                
+    elif move[0] == "SPREAD":
+        spread(temp_board, move[1], player)
+    
+    return temp_board
 
 def game_over(player, enemy, game_state):
     if (game_state._round >= 343) or \
@@ -363,21 +402,22 @@ def generate_moves(input: dict[tuple, tuple], player: str) -> list:
     moves = []
     # generate moves for spawning a new piece
     # get a list of empty cells which can be spawned on
-    empty_cells = get_spwan_options(input)
+    empty_cells = get_spawn_options(input)
     for cell in empty_cells:
         move = SpawnAction(HexPos(cell[0], cell[1]))
-        moves.append(("SPAWN",(move)))
+        moves.append(("SPAWN",(cell[0], cell[1])))
+
     # generate moves for spreading existing pieces
     player_cells = coord_list(input, player)
     for cell in player_cells:
         directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
         for direction in directions:
             move = SpreadAction(HexPos(cell[0], cell[1]), HexDir(direction))
-            moves.append(("SPREAD", move))
+            moves.append(("SPREAD", (cell[0], cell[1], direction[0], direction[1])))
     return moves
 
 
-def get_spwan_options(input: dict[tuple, tuple]) -> list:
+def get_spawn_options(input: dict[tuple, tuple]) -> list:
     # get a list of all empty cells which can be spawned on
     empty_cells = []
     occupied_cells = set(input.keys())
