@@ -85,35 +85,38 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # essentially random moves regardless of player
 # need to turn them to greedy moves with use of heuristic
 
-def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy):
+def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
-def make_move(input: dict[tuple, tuple], player: str, enemy):
+def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     playerCell_list = coord_list(input, player)
     enemyCell_list = coord_list(input, enemy)
+
     total_power = count_power(input)
+    player_power = count_color_power(input, player)
+    enemy_power = count_color_power(input, enemy)
     distance_dict = {}
 
     for playerCell in playerCell_list:
-        enemyCell = find_closest_cell(input, playerCell, enemy)
+        enemyCell = find_closest_cell(input, playerCell, enemy, game_state)
         if enemyCell is not None:
             distance = travel_distance(*playerCell, *enemyCell, input[playerCell][1])
             distance_dict[playerCell] = (enemyCell, distance)
 
     if distance_dict:
         playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
+        mini_max(input, 0, True, player, enemy, game_state)
         direction = determine_direction(playerCell, distance_dict[playerCell][0])
 
         if len(playerCell_list) == 1:
             if total_power >= 48:
                 return simple_spread(input, playerCell, direction)
-            return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
+            return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
         return simple_spread(input, playerCell, direction)
-
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
     return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
@@ -126,7 +129,7 @@ def coord_list(input, player):
             result_list.append(cell)
     return result_list
 
-def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy):
+def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy,game_state):
     directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
     visited = []
     queue = PriorityQueue()
@@ -297,3 +300,90 @@ def count_power(board: dict[tuple, tuple]):
         total_power += values[index][1]
     return total_power
 
+def count_color_power(board: dict[tuple, tuple], color):
+    total_power = 0
+    values = list(board.values())
+    for index, tuple in enumerate(values):
+        if values[index][0] == color:
+            total_power += values[index][1]
+    return total_power
+
+# mini max stuff
+
+def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
+    # base case (game over)
+    if (depth ==  1) or (game_over(player, enemy, game_state)):
+        return evaluate_state(input, player, enemy)
+    # current player is to be maximised
+    if max_player == True:
+        max_eval = float('-inf')
+
+        # ACTUAL IMPLEMENTATION MISSING
+
+        # general moves to make on the board
+        # two types, Spawn or spread (they need to be identified)
+        # actions can be a list of tuples, where spawn and spread moves are distinguished
+        moves = generate_moves(input, player)
+#           apply each of th new action to a COPY of the current state of the board
+#           recursively apply MiniMax to the new boards (maximizing_player = False)
+#           get the best evaluation value from each of these (best being max eval)
+#           return max eval
+    else:
+        max_eval = float('inf')
+
+        moves = generate_moves(input, enemy)
+#           apply each of th new action to a COPY of the current state of the board
+#           recursively apply MiniMax to the new boards (maximizing_player = True)
+#           get the worst evaluation value from each of these (worst being min eval)
+#           return min eval
+
+def game_over(player, enemy, game_state):
+    if (game_state._round >= 343) or \
+            (count_color_power(game_state.board, player) == 0) or \
+            (count_color_power(game_state.board, enemy) == 0):
+        return True
+    else:
+        return False
+
+
+def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
+    # The below Evaluation function is completely made up!!!!!!
+
+    # Weights for power distance
+    power_weight = 1
+    # calculate some board metrics
+    # Also include late / early game calculations / distnce or enemy cells?
+    player_power = count_color_power(board, player)
+    enemy_power = count_color_power(board, enemy)
+    # calculate score / give an evaluation
+    evaluation = (power_weight * (player_power - enemy_power))
+    return evaluation
+
+def generate_moves(input: dict[tuple, tuple], player: str) -> list:
+    moves = []
+    # generate moves for spawning a new piece
+    # get a list of empty cells which can be spawned on
+    empty_cells = get_spwan_options(input)
+    for cell in empty_cells:
+        move = SpawnAction(HexPos(cell[0], cell[1]))
+        moves.append(("SPAWN",(move)))
+    # generate moves for spreading existing pieces
+    player_cells = coord_list(input, player)
+    for cell in player_cells:
+        directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
+        for direction in directions:
+            move = SpreadAction(HexPos(cell[0], cell[1]), HexDir(direction))
+            moves.append(("SPREAD", move))
+    return moves
+
+
+def get_spwan_options(input: dict[tuple, tuple]) -> list:
+    # get a list of all empty cells which can be spawned on
+    empty_cells = []
+    occupied_cells = set(input.keys())
+    for row in range(7):
+        for col in range(7):
+            cell = (row, col)
+            if cell not in occupied_cells:
+                empty_cells.append(cell)
+    return empty_cells

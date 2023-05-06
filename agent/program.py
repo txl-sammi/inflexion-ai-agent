@@ -41,10 +41,12 @@ class Agent:
         """
         if (self._round == 0 or self._round == 1): #first move
             self._round += 1
-            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy)
+            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy,self)
         else:
             self._round += 1
-            return make_move(self.board, self._player, self._enemy)
+            return make_move(self.board, self._player, self._enemy,self)
+
+
 
     def turn(self, color: PlayerColor, action: Action, **referee: dict):
         """
@@ -62,3 +64,5 @@ class Agent:
                 self._board = spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
+
+
