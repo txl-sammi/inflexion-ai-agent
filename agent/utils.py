@@ -94,39 +94,25 @@ def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy):
 
 def make_move(input: dict[tuple, tuple], player: str, enemy):
     playerCell_list = coord_list(input, player)
+    enemyCell_list = coord_list(input, enemy)
     total_power = count_power(input)
-
-    # print("cell_list ")
-    # print(cell_list)
-    # print(len(playerCell_list))
-
-    print(playerCell_list)
-
-    distance_dict = dict()
+    distance_dict = {}
 
     for playerCell in playerCell_list:
         enemyCell = find_closest_cell(input, playerCell, enemy)
+        if enemyCell is not None:
+            distance = travel_distance(*playerCell, *enemyCell, input[playerCell][1])
+            distance_dict[playerCell] = (enemyCell, distance)
 
-        distance_dict[playerCell] = (enemyCell,
-                                  travel_distance(playerCell[0], playerCell[1],
-                                                  enemyCell[0], enemyCell[1],
-                                                  input[playerCell][1]))
-    # determine direction and add spread solution
-    playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
-    print(playerCell)
-    direction = determine_direction(playerCell, distance_dict[playerCell][0])
+    if distance_dict:
+        playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
+        direction = determine_direction(playerCell, distance_dict[playerCell][0])
 
-    # print("direction")
-    # print(direction)
-
-
-    if len(playerCell_list) == 1:
-        if total_power >= 48:
-            return simple_spread(input , playerCell, direction)
-        else:
+        if len(playerCell_list) == 1:
+            if total_power >= 48:
+                return simple_spread(input, playerCell, direction)
             return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy)
-    else:
-        return simple_spread(input , playerCell, direction)
+        return simple_spread(input, playerCell, direction)
 
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
@@ -134,12 +120,6 @@ def simple_spread(board: dict[tuple, tuple], playerCell, direction):
 
 def coord_list(input, player):
     result_list = list()
-
-    # # print("input")
-    # print(input)
-    # #
-    # # print("player")
-    # print(player)
 
     for cell in input.keys():
         if input[cell][0] == player:
@@ -153,7 +133,7 @@ def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy):
     # add start cell with distance 0
     queue.put((0, cell))
 
-    # greedy best-first search algorithm
+    # A* (kind of)search algorithm
     while queue:
         current_dist, current_cell = queue.get()
         if current_cell in input:
@@ -165,9 +145,11 @@ def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy):
             if next_cell not in visited:
                 visited.append(next_cell)
                 # calculate the distance to the target cell using a heuristic function
-                estimated_dist = calculate_heuristic(next_cell, input, enemy)
+                # estimated_dist = calculate_heuristic(next_cell, input, enemy)
+                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, input, enemy)
                 # add the cell to the priority queue using heuristic as priority
                 queue.put((estimated_dist, next_cell))
+
 
 def determine_next_cell(current_cell: tuple, direction: tuple):
     # hex directions: (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)
@@ -183,7 +165,7 @@ def determine_next_cell(current_cell: tuple, direction: tuple):
         next_x -= 7
     elif next_x < 0:
         next_x += 7
-    elif next_y > 6:
+    if  next_y > 6:
         next_y -= 7
     elif next_y < 0:
         next_y += 7
@@ -193,22 +175,21 @@ def determine_next_cell(current_cell: tuple, direction: tuple):
 
 
 def calculate_heuristic(cell: tuple, input: dict[tuple, tuple], enemy):
-    blueCell_list = coord_list(input, enemy)
+    enemyCell_list = coord_list(input, enemy)
 
     # print("blueCell_list")
     # print(blueCell_list)
 
     distance_dict = dict()
-    for blue_cell in blueCell_list:
-        distance = calc_distance(cell[0], cell[1], blue_cell[0], blue_cell[1])
+    for enemy_cell in enemyCell_list:
+        distance = calc_distance(cell[0], cell[1], enemy_cell[0], enemy_cell[1])
 
         # print("distance")
         # print(distance)
 
-        distance_dict[blue_cell] = distance
+        distance_dict[enemy_cell] = distance
     min_distance_cell = min(distance_dict, key=distance_dict.get)
     return distance_dict[min_distance_cell]
-
 
 def calc_distance(x1, y1, x2, y2):
     # distance of two points
@@ -220,7 +201,6 @@ def calc_distance(x1, y1, x2, y2):
         return abs(dx) + abs(dy)
     else:
         return max(abs(dx), abs(dy))
-
 
 def wrap_check(dx, dy):
     dx_wrap = 100
@@ -240,18 +220,15 @@ def wrap_check(dx, dy):
     # return the minimum of the two
     return min(dx, dx_wrap), min(dy, dy_wrap)
 
-
-
-
 def travel_distance(x1, y1, x2, y2, power):
-    # how long i should travel in a certain direction until x1=x2 and y1=y2
+    # how long I should travel in a certain direction until x1=x2 and y1=y2
     direction = determine_direction((x1, y1), (x2, y2))
     reached = False
     cell = (x1, y1)
     distance = 0
     next_cell = determine_next_cell(cell, (direction[0] * power, direction[1] * power))
 
-    while reached == False:
+    while not reached:
         distance += 1
         if next_cell == (x2, y2):
             reached = True
@@ -260,26 +237,11 @@ def travel_distance(x1, y1, x2, y2, power):
         next_cell = determine_next_cell(next_cell, direction)
     return distance
 
-
 def determine_direction(start: tuple, target: tuple):
-    x1 = start[0]
-    x2 = target[0]
-    y1 = start[1]
-    y2 = target[1]
+    x1, x2 = start[0], target[0]
+    y1, y2 = start[1], target[1]
 
-    dx = x2 - x1
-    dy = y2 - y1
-
-    # check for wrap around
-    if dx > 3.5:
-        dx -= 7
-    elif dx < -3.5:
-        dx += 7
-
-    if dy > 3.5:
-        dy -= 7
-    elif dy < -3.5:
-        dy += 7
+    dx, dy = wrap_check(x2 - x1, y2 - y1)
 
     # determine direction to take
     if dx == 0:
@@ -303,51 +265,6 @@ def determine_direction(start: tuple, target: tuple):
                 return (-1, 0)  # south-west
         else:  # dy > 0
             return (-1, 1)  # south
-
-
-
-def determine_new_direction(start: tuple, target: tuple):
-    x1 = start[0]
-    x2 = target[0]
-    y1 = start[1]
-    y2 = target[1]
-
-    dx = x2 - x1
-    dy = y2 - y1
-
-    # check for wrap around
-    if dx > 3.5:
-        dx -= 7
-    elif dx < -3.5:
-        dx += 7
-
-    if dy > 3.5:
-        dy -= 7
-    elif dy < -3.5:
-        dy += 7
-
-    # determine direction to take
-    if dx == 0:
-        if dy < 0:
-            return "UpLeft"  # north-west
-        else:
-            return "DownRight" # south-east
-    elif dx > 0:
-        if dy >= 0:
-            if dx > dy:
-                return "UpRight"  # north-east
-            else:
-                return "DownRight"  # south-east
-        else:
-            return "Up"  # north
-    else:  # dx < 0
-        if dy <= 0:
-            if dx > dy:
-                return "UpLeft"  # north-west
-            else:
-                return "DownLeft"  # south-west
-        else:  # dy > 0
-            return "Down"  # south
 
 def spread(input: dict[tuple, tuple], action: tuple, colour):
     cell = (action[0], action[1])
@@ -375,10 +292,8 @@ def spread(input: dict[tuple, tuple], action: tuple, colour):
 
 def count_power(board: dict[tuple, tuple]):
     total_power = 0
-
     values = list(board.values())
-
     for index, tuple in enumerate(values):
         total_power += values[index][1]
-
     return total_power
+

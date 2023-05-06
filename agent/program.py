@@ -15,9 +15,6 @@ from .utils import spawn, make_move, spread
 import random
 
 class Agent:
-
-    board = {}
-
     def __init__(self, color: PlayerColor, **referee: dict):
         """
         Initialise the agent.
@@ -25,7 +22,7 @@ class Agent:
 
         self._color = color
         self._round = 0
-        
+        self.board = {}
 
         # determine Player
         match color:
@@ -42,22 +39,12 @@ class Agent:
         """
         Return the next action to take.
         """
-
-        
-
         if (self._round == 0 or self._round == 1): #first move
             self._round += 1
             return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy)
         else:
             self._round += 1
             return make_move(self.board, self._player, self._enemy)
-
-        # match self._color:
-        #     case PlayerColor.RED:
-        #         return SpawnAction(HexPos(3, 3))
-        #     case PlayerColor.BLUE:
-        #         # This is going to be invalid... BLUE never spawned!
-        #         return SpreadAction(HexPos(3, 3), HexDir.Up)
 
     def turn(self, color: PlayerColor, action: Action, **referee: dict):
         """
@@ -66,18 +53,12 @@ class Agent:
 
         match action:
             case SpawnAction(cell):
-
                 self.board[cell.r, cell.q] = (color.name, 1)
-
+                print(f"Testing: {color} SPAWN at {cell}")
                 pass
             case SpreadAction(cell, direction):
-
                 direction_r = direction.value.r
                 direction_q = direction.value.q
-
-                spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
-
+                self._board = spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
-
-
