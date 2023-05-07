@@ -112,13 +112,42 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
 
     if distance_dict:
         playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
-        mini_max(input, 0, True, player, enemy, game_state)
         direction = determine_direction(playerCell, distance_dict[playerCell][0])
+
+        best_move = None
+        best_value = -float('inf')
+        max_eval = -float('inf')
+        best_moves = []
+        moves = generate_moves(input, player)
+        for move in moves:
+            temp_board = make_board(input, move, player)
+
+            eval_value = evaluate_state(temp_board, player, enemy)
+
+            if (eval_value > max_eval):
+                max_eval = eval_value
+                best_moves.append(move)     
+        
+        final_moves = best_moves[-3:]
+
+        for move in final_moves:
+            temp_board = make_board(input, move, player)
+            value = mini_max(input, 3, False, player, enemy, game_state)
+            if (value > best_value):
+                best_value = value
+                best_move = move
+
 
         if len(playerCell_list) == 1:
             if total_power >= 48:
                 return simple_spread(input, playerCell, direction)
             return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
+
+        if best_move[0] == "SPAWN":
+            return spawn(input, move[1], player, enemy, game_state)
+                
+        elif best_move[0] == "SPREAD":
+            return simple_spread(input, (move[1][0], move[1][1]), HexDir((move[1][2], move[1][3])))
         return simple_spread(input, playerCell, direction)
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
@@ -317,7 +346,7 @@ def count_color_power(board: dict[tuple, tuple], color):
 
 def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
     # base case (game over)
-    if (depth ==  2) or (game_over(player, enemy, game_state)):
+    if (depth ==  0) or (game_over(player, enemy, game_state)):
         return evaluate_state(input, player, enemy)
     
     best_moves = []
@@ -345,25 +374,35 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
         final_moves = best_moves[-3:]
 
         # then test other board states
-        eval_values = []
+
+        
         for move in final_moves:
             temp_board = make_board(input, move, player)
-            eval_values.append(mini_max(temp_board, depth + 1, False, player, enemy, game_state))
+            max_eval = max(max_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state))
 
-        # return desired - not sure how to approach from here 
+        return max_eval
 
-#           apply each of th new action to a COPY of the current state of the board
-#           recursively apply MiniMax to the new boards (maximizing_player = False)
-#           get the best evaluation value from each of these (best being max eval)
-#           return max eval
     else:
-        max_eval = float('inf')
+        min_eval = float('inf')
 
         moves = generate_moves(input, enemy)
-#           apply each of th new action to a COPY of the current state of the board
-#           recursively apply MiniMax to the new boards (maximizing_player = True)
-#           get the worst evaluation value from each of these (worst being min eval)
-#           return min eval
+
+        for move in moves:
+            temp_board = make_board(input, move, player)
+
+            eval_value = evaluate_state(temp_board, player, enemy)
+
+            if (eval_value > min_eval):
+                min_eval = eval_value
+                best_moves.append(move)     
+        
+        final_moves = best_moves[-3:]
+        
+        for move in final_moves:
+            temp_board = make_board(input, move, player)
+            min_eval = min(min_eval, mini_max(temp_board, depth - 1, True, player, enemy, game_state))
+
+        return min_eval
 
 def make_board(input, move, player):
     temp_board = input.copy()
