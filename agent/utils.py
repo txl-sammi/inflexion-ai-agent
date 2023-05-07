@@ -86,12 +86,9 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # need to turn them to greedy moves with use of heuristic
 
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
-    print(coord)
-    print(board)
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
-    print(coord)
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
@@ -143,12 +140,12 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
                 return simple_spread(input, playerCell, direction)
             return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
 
+        print(best_move)
         if best_move[0] == "SPAWN":
-            return spawn(input, move[1], player, enemy, game_state)
+            return spawn(input, best_move[1], player, enemy, game_state)
                 
         elif best_move[0] == "SPREAD":
-            return simple_spread(input, (move[1][0], move[1][1]), HexDir((move[1][2], move[1][3])))
-        return simple_spread(input, playerCell, direction)
+            return simple_spread(input, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
     return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
@@ -443,7 +440,6 @@ def generate_moves(input: dict[tuple, tuple], player: str) -> list:
     # get a list of empty cells which can be spawned on
     empty_cells = get_spawn_options(input)
     for cell in empty_cells:
-        move = SpawnAction(HexPos(cell[0], cell[1]))
         moves.append(("SPAWN",(cell[0], cell[1])))
 
     # generate moves for spreading existing pieces
@@ -451,7 +447,6 @@ def generate_moves(input: dict[tuple, tuple], player: str) -> list:
     for cell in player_cells:
         directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
         for direction in directions:
-            move = SpreadAction(HexPos(cell[0], cell[1]), HexDir(direction))
             moves.append(("SPREAD", (cell[0], cell[1], direction[0], direction[1])))
     return moves
 
