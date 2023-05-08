@@ -39,15 +39,13 @@ class Agent:
         """
         Return the next action to take.
         """
+        print(self._round)
         if (self._round == 0 or self._round == 1): #first move
-            self._round += 1
-            if self._player == "RED":
-                center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
-                red_spawn = random.choice(center_coords)
-                return spawn(self.board, (red_spawn[0], red_spawn[1]), self._player, self._enemy, self)
-            else:
-                return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy, self)
 
+            self._round += 1
+            center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
+            spawn_coord = random.choice(center_coords)
+            return spawn(self.board, (spawn_coord[0], spawn_coord[1]), self._player, self._enemy, self)
         else:
             self._round += 1
             return make_move(self.board, self._player, self._enemy,self)
@@ -65,9 +63,7 @@ class Agent:
                 print(f"Testing: {color} SPAWN at {cell}")
                 pass
             case SpreadAction(cell, direction):
-                direction_r = direction.value.r
-                direction_q = direction.value.q
-                self._board = spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
+                self._board = spread(self.board, (cell.r, cell.q, direction.value.r, direction.value.q), color.name)
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
 

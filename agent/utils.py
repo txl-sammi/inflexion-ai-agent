@@ -117,12 +117,9 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
 
         if len(playerCell_list) == 1:
             if total_power >= 48:
-                return simple_spread(input, playerCell, direction)
+                return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
             return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
-        return simple_spread(input, playerCell, direction)
-
-def simple_spread(board: dict[tuple, tuple], playerCell, direction):
-    return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
+        return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
 
 def coord_list(input, player):
     result_list = list()
