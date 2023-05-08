@@ -108,49 +108,15 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
             distance_dict[playerCell] = (enemyCell, distance)
 
     if distance_dict:
-
-        
         playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
         direction = determine_direction(playerCell, distance_dict[playerCell][0])
-
-        best_move = None
-        best_value = -float('inf')
-        max_eval = -float('inf')
-        best_moves = []
-        moves = generate_moves(input, player)
-        for move in moves:
-            if (total_power >= 48):
-                if (move[0] == "SPAWN"):
-                    continue
-            
-            temp_board = make_board(input, move, player)
-
-            eval_value = evaluate_state(temp_board, player, enemy)
-
-            if (eval_value > max_eval):
-                max_eval = eval_value
-                best_moves.append(move)     
-        
-        final_moves = best_moves[-3:]
-
-        for move in final_moves:
-            temp_board = make_board(input, move, player)
-            value = mini_max(input, 10, False, player, enemy, game_state)
-            if (value > best_value):
-                best_value = value
-                best_move = move
 
 
         if len(playerCell_list) == 1:
             if total_power >= 48:
                 return simple_spread(input, playerCell, direction)
             return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
-
-        if best_move[0] == "SPAWN":
-            return spawn(input, best_move[1], player, enemy, game_state)
-                
-        elif best_move[0] == "SPREAD":
-            return simple_spread(input, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
+        return simple_spread(input, playerCell, direction)
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
     return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
