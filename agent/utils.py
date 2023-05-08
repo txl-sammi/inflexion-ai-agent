@@ -86,12 +86,12 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # need to turn them to greedy moves with use of heuristic
 
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
-    print(coord)
-    print(board)
+    # print(coord)
+    # print(board)
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
-    print(coord)
+    # print(coord)
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 

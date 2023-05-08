@@ -41,7 +41,13 @@ class Agent:
         """
         if (self._round == 0 or self._round == 1): #first move
             self._round += 1
-            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy,self)
+            if self._player == "RED":
+                center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
+                red_spawn = random.choice(center_coords)
+                return spawn(self.board, (red_spawn[0], red_spawn[1]), self._player, self._enemy, self)
+            else:
+                return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy, self)
+
         else:
             self._round += 1
             return make_move(self.board, self._player, self._enemy,self)
