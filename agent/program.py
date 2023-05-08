@@ -39,9 +39,13 @@ class Agent:
         """
         Return the next action to take.
         """
+        print(self._round)
         if (self._round == 0 or self._round == 1): #first move
+
             self._round += 1
-            return spawn(self.board, (random.randint(0, 6), random.randint(0, 6)), self._player, self._enemy,self)
+            center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
+            spawn_coord = random.choice(center_coords)
+            return spawn(self.board, (spawn_coord[0], spawn_coord[1]), self._player, self._enemy, self)
         else:
             self._round += 1
             return make_move(self.board, self._player, self._enemy,self)
