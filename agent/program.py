@@ -59,9 +59,7 @@ class Agent:
                 print(f"Testing: {color} SPAWN at {cell}")
                 pass
             case SpreadAction(cell, direction):
-                direction_r = direction.value.r
-                direction_q = direction.value.q
-                self._board = spread(self.board, (cell.r, cell.q, direction_r, direction_q), color.name)
+                self._board = spread(self.board, (cell.r, cell.q, direction.value.r, direction.value.q), color.name)
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
 
