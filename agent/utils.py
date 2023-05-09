@@ -92,62 +92,43 @@ def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_stat
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
-def make_move(board: dict[tuple, tuple], player: str, enemy, game_state):
-    playerCell_list = coord_list(board, player)
-    enemyCell_list = coord_list(board, enemy)
+def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
+    
+    playerCell_list = coord_list(input, player)
+    enemyCell_list = coord_list(input, enemy)
 
-    total_power = count_power(board)
-    player_power = count_color_power(board, player)
-    enemy_power = count_color_power(board, enemy)
-    distance_dict = {}
+    if len(playerCell_list) == 1:
+        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
 
-    for playerCell in playerCell_list:
-        enemyCell = find_closest_cell(board, playerCell, enemy, game_state)
-        if enemyCell is not None:
-            distance = travel_distance(*playerCell, *enemyCell, board[playerCell][1])
-            distance_dict[playerCell] = (enemyCell, distance)
+    total_power = count_power(input)
+    player_power = count_color_power(input, player)
+    enemy_power = count_color_power(input, enemy)
 
-    if distance_dict:
-        playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
-        direction = determine_direction(playerCell, distance_dict[playerCell][0])
-
-        best_move = None
-        best_value = -float('inf')
-        max_eval = -float('inf')
-        best_moves = []
-        moves = generate_moves(board, player)
-        for move in moves:
-            if (total_power >= 48):
-                if (move[0] == "SPAWN"):
-                    continue
-            
-            temp_board = make_board(board, move, player)
-            eval_value = evaluate_state(temp_board, player, enemy)
-
-            if (eval_value > max_eval):
-                max_eval = eval_value
-                best_moves.append(move)     
+    best_move = None
+    best_value = -float('inf')
+    alpha = -float('inf')
+    beta = float('inf')
+    max_eval = -float('inf')
+    best_moves = []
+    moves = generate_moves(input, player)
+    for move in moves:
+        if (total_power >= 48):
+            if (move[0] == "SPAWN"):
+                continue
         
-        final_moves = best_moves[-3:]
+        temp_board = make_board(input, move, player)
 
-        for move in final_moves:
-            temp_board = make_board(board, move, player)
-            value = mini_max(board, 10, False, player, enemy, game_state)
-            if (value > best_value):
-                best_value = value
-                best_move = move
+        value = mini_max(temp_board, 3, False, player, enemy, game_state, alpha, beta)
+        if (value > best_value):
+            best_value = value
+            best_move = move
+        alpha = max(alpha, best_value)
 
-
-        if len(playerCell_list) == 1:
-            if total_power >= 48:
-                return simple_spread(board, playerCell, direction)
-            return spawn(board, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
-
-        if best_move[0] == "SPAWN":
-            return spawn(board, best_move[1], player, enemy, game_state)
-                
-        elif best_move[0] == "SPREAD":
-            return simple_spread(board, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
+    if best_move[0] == "SPAWN":
+        return spawn(input, best_move[1], player, enemy, game_state)
+            
+    elif best_move[0] == "SPREAD":
+        return simple_spread(input, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
     return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
@@ -339,63 +320,41 @@ def count_color_power(board: dict[tuple, tuple], color):
 
 # mini max stuff
 
-def mini_max(board: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
+def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_state, alpha, beta):
     # base case (game over)
     if (depth ==  0) or (game_over(player, enemy, game_state)):
-        return evaluate_state(board, player, enemy)
-    
-    best_moves = []
+        return evaluate_state(input, player, enemy)
+   
     # current player is to be maximised
     if max_player == True:
         max_eval = float('-inf')
 
-        # ACTUAL IMPLEMENTATION MISSING
-
         # general moves to make on the board
         # two types, Spawn or spread (they need to be identified)
         # actions can be a list of tuples, where spawn and spread moves are distinguished
-        moves = generate_moves(board, player)
+        moves = generate_moves(input, player)
 
         # get best three moves
         for move in moves:
-            temp_board = make_board(board, move, player)
-
-            eval_value = evaluate_state(temp_board, player, enemy)
-
-            if (eval_value > max_eval):
-                max_eval = eval_value
-                best_moves.append(move)     
-        
-        final_moves = best_moves[-5:]
-
-        # then test other board states
-
-        
-        for move in final_moves:
-            temp_board = make_board(board, move, player)
-            max_eval = max(max_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state))
+            temp_board = make_board(input, move, player)
+            max_eval = max(max_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state, alpha, beta))
+            alpha = max(alpha, max_eval)
+            if beta <= alpha:
+                break
 
         return max_eval
 
     else:
         min_eval = float('inf')
-
-        moves = generate_moves(board, enemy)
+        moves = generate_moves(input, enemy)
 
         for move in moves:
-            temp_board = make_board(board, move, enemy)
+            temp_board = make_board(input, move, player)
 
-            eval_value = evaluate_state(temp_board, player, enemy)
-
-            if (eval_value > min_eval):
-                min_eval = eval_value
-                best_moves.append(move)     
-        
-        final_moves = best_moves[-3:]
-        
-        for move in final_moves:
-            temp_board = make_board(board, move, player)
-            min_eval = min(min_eval, mini_max(temp_board, depth - 1, True, player, enemy, game_state))
+            min_eval = max(min_eval, mini_max(temp_board, depth - 1, True, player, enemy, game_state, alpha, beta))
+            beta = min(beta, min_eval)
+            if beta <= alpha:
+                break
 
         return min_eval
 
@@ -431,8 +390,6 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
 
 
     # calculate some board metrics
-
-    # Also include late / early game calculations / distnce or enemy cells?
 
     # Power Eval
     player_power = count_color_power(board, player)

@@ -141,31 +141,6 @@ def coord_list(input, player):
             result_list.append(cell)
     return result_list
 
-def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy,game_state):
-    directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
-    visited = []
-    queue = PriorityQueue()
-    # add start cell with distance 0
-    queue.put((0, cell))
-
-    # A* (kind of)search algorithm
-    while queue:
-        current_dist, current_cell = queue.get()
-        if current_cell in input:
-            if input[current_cell][0] == enemy:
-                return current_cell
-
-        for d in directions:
-            next_cell = determine_next_cell(current_cell, d)
-            if next_cell not in visited:
-                visited.append(next_cell)
-                # calculate the distance to the target cell using a heuristic function
-                # estimated_dist = calculate_heuristic(next_cell, input, enemy)
-                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, input, enemy)
-                # add the cell to the priority queue using heuristic as priority
-                queue.put((estimated_dist, next_cell))
-
-
 def determine_next_cell(current_cell: tuple, direction: tuple):
     # hex directions: (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)
 
@@ -188,98 +163,6 @@ def determine_next_cell(current_cell: tuple, direction: tuple):
     return (next_x, next_y)
 
 
-
-def calculate_heuristic(cell: tuple, input: dict[tuple, tuple], enemy):
-    enemyCell_list = coord_list(input, enemy)
-
-    # print("blueCell_list")
-    # print(blueCell_list)
-
-    distance_dict = dict()
-    for enemy_cell in enemyCell_list:
-        distance = calc_distance(cell[0], cell[1], enemy_cell[0], enemy_cell[1])
-
-        # print("distance")
-        # print(distance)
-
-        distance_dict[enemy_cell] = distance
-    min_distance_cell = min(distance_dict, key=distance_dict.get)
-    return distance_dict[min_distance_cell]
-
-def calc_distance(x1, y1, x2, y2):
-    # distance of two points
-    # calculate new distance if wrap around
-    dx, dy = wrap_check((x1 - x2), (y1 - y2))
-
-    # hexoganol distance check if points in a straight line (fastest route)
-    if (x1 < x2 and y1 < y2) or (x1 > x2 and y1 > y2):
-        return abs(dx) + abs(dy)
-    else:
-        return max(abs(dx), abs(dy))
-
-def wrap_check(dx, dy):
-    dx_wrap = 100
-    dy_wrap = 100
-
-    # check for wrap around
-    if dx > 3.5:
-        dx_wrap = 7 - dx
-    elif dx < -3.5:
-        dx_wrap = 7 + dx
-
-    if dy > 3.5:
-        dy_wrap = 7 - dy
-    elif dy < -3.5:
-        dy_wrap = 7 + dy
-
-    # return the minimum of the two
-    return min(dx, dx_wrap), min(dy, dy_wrap)
-
-def travel_distance(x1, y1, x2, y2, power):
-    # how long I should travel in a certain direction until x1=x2 and y1=y2
-    direction = determine_direction((x1, y1), (x2, y2))
-    reached = False
-    cell = (x1, y1)
-    distance = 0
-    next_cell = determine_next_cell(cell, (direction[0] * power, direction[1] * power))
-
-    while not reached:
-        distance += 1
-        if next_cell == (x2, y2):
-            reached = True
-            break
-        direction = determine_direction(next_cell, (x2, y2))
-        next_cell = determine_next_cell(next_cell, direction)
-    return distance
-
-def determine_direction(start: tuple, target: tuple):
-    x1, x2 = start[0], target[0]
-    y1, y2 = start[1], target[1]
-
-    dx, dy = wrap_check(x2 - x1, y2 - y1)
-
-    # determine direction to take
-    if dx == 0:
-        if dy < 0:
-            return (0, -1)  # north-west
-        else:
-            return (0, 1)  # south-east
-    elif dx > 0:
-        if dy >= 0:
-            if dx > dy:
-                return (1, 0)  # north-east
-            else:
-                return (0, 1)  # south-east
-        else:
-            return (1, -1)  # north
-    else:  # dx < 0
-        if dy <= 0:
-            if dx > dy:
-                return (0, -1)  # north-west
-            else:
-                return (-1, 0)  # south-west
-        else:  # dy > 0
-            return (-1, 1)  # south
 
 def spread(input: dict[tuple, tuple], action: tuple, colour):
     cell = (action[0], action[1])
