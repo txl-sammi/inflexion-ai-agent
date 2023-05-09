@@ -239,8 +239,7 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 
         for move in moves:
             temp_board = make_board(input, move, enemy).copy()
-
-            min_eval = max(min_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state, alpha, beta))
+            mmin_eval = min(min_eval, mini_max(temp_board, depth - 1, False , player, enemy, game_state, alpha, beta))
             beta = min(beta, min_eval)
             if beta <= alpha:
                 break
