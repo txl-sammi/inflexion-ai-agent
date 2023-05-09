@@ -97,9 +97,6 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     playerCell_list = coord_list(input, player)
     enemyCell_list = coord_list(input, enemy)
 
-    if len(playerCell_list) == 1:
-        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
-
     total_power = count_power(input)
     player_power = count_color_power(input, player)
     enemy_power = count_color_power(input, enemy)
@@ -112,7 +109,7 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     best_moves = []
     moves = generate_moves(input, player)
     for move in moves:
-        if (total_power >= 48):
+        if (total_power >= 47):
             if (move[0] == "SPAWN"):
                 continue
         
@@ -266,19 +263,14 @@ def game_over(player, enemy, game_state):
 
 
 def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
-    # The below Evaluation function is completely made up!!!!!!
-    # for each cell in board:
-    #   if cell is player cell:
-    #          
 
     # Weights for power distance
     power_weight = 1
     # calculate some board metrics
-    # Also include late / early game calculations / distnce or enemy cells?
     player_power = count_color_power(board, player)
     enemy_power = count_color_power(board, enemy)
     # calculate score / give an evaluation
-    evaluation = (power_weight * (player_power - enemy_power))
+    evaluation = enemy_power
     return evaluation
 
 def generate_moves(input: dict[tuple, tuple], player: str) -> list:

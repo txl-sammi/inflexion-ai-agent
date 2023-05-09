@@ -97,9 +97,6 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     playerCell_list = coord_list(input, player)
     enemyCell_list = coord_list(input, enemy)
 
-    if len(playerCell_list) == 1:
-        return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
-
     total_power = count_power(input)
     player_power = count_color_power(input, player)
     enemy_power = count_color_power(input, enemy)
@@ -109,7 +106,7 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     alpha = -float('inf')
     beta = float('inf')
     max_eval = -float('inf')
-    best_moves = []
+
     moves = generate_moves(input, player)
     for move in moves:
         if (total_power >= 48):
@@ -357,9 +354,6 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
                 break
 
         return min_eval
-
-
-
 
 
 
