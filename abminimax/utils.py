@@ -80,11 +80,6 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
         output += "\n"
     return output
 
-
-# all function below are for a DUMB players (Blue and RED)
-# essentially random moves regardless of player
-# need to turn them to greedy moves with use of heuristic
-
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
     if coord in board:
         while coord in board:
@@ -106,7 +101,6 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
     alpha = float('-inf')
     beta = float('-inf')
     max_eval = float('-inf')
-    best_moves = []
 
     moves = generate_moves(input, player)
 
@@ -116,10 +110,12 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
                 continue
         temp_board = make_board(input, move, player).copy()
         value = mini_max(temp_board, 3, True, player, enemy, game_state, alpha, beta)
-        print('####')
-        print(move)
-        print(value)
-        print('####')
+
+        # print('####')
+        # print(move)
+        # print(value)
+        # print('####')
+        
         if (value > best_value):
             best_value = value
             best_move = move
@@ -270,7 +266,7 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
     power_weight = 0.5
     cell_dominance_weight = 0.5
     Mobility_weight = 1
-    vulnerability_weight = -0.5
+    vulnerability_weight = -1
     # position metric ?
     position_weight = 1
 
@@ -290,8 +286,6 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
     player_dom = (player_cells / (player_cells + enemy_cells + empty_cells))
     enemy_dom = (enemy_cells / (player_cells + enemy_cells + empty_cells))
     dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))*10
-
-
 
     # Mobility Eval
     mobility_eval = (Mobility_weight * (calculate_spread_enemy_cells(board, player, enemy)))
