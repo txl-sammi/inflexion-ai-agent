@@ -40,7 +40,6 @@ class Agent:
         Return the next action to take.
         """
         if (self._round == 0 or self._round == 1): #first move
-
             self._round += 1
             center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
             spawn_coord = random.choice(center_coords)
