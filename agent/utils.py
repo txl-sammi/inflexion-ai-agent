@@ -92,24 +92,22 @@ def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_stat
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
-def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
-    playerCell_list = coord_list(input, player)
-    enemyCell_list = coord_list(input, enemy)
+def make_move(board: dict[tuple, tuple], player: str, enemy, game_state):
+    playerCell_list = coord_list(board, player)
+    enemyCell_list = coord_list(board, enemy)
 
-    total_power = count_power(input)
-    player_power = count_color_power(input, player)
-    enemy_power = count_color_power(input, enemy)
+    total_power = count_power(board)
+    player_power = count_color_power(board, player)
+    enemy_power = count_color_power(board, enemy)
     distance_dict = {}
 
     for playerCell in playerCell_list:
-        enemyCell = find_closest_cell(input, playerCell, enemy, game_state)
+        enemyCell = find_closest_cell(board, playerCell, enemy, game_state)
         if enemyCell is not None:
-            distance = travel_distance(*playerCell, *enemyCell, input[playerCell][1])
+            distance = travel_distance(*playerCell, *enemyCell, board[playerCell][1])
             distance_dict[playerCell] = (enemyCell, distance)
 
     if distance_dict:
-
-        
         playerCell = min(distance_dict, key=lambda k: distance_dict[k][1])
         direction = determine_direction(playerCell, distance_dict[playerCell][0])
 
@@ -117,14 +115,13 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
         best_value = -float('inf')
         max_eval = -float('inf')
         best_moves = []
-        moves = generate_moves(input, player)
+        moves = generate_moves(board, player)
         for move in moves:
             if (total_power >= 48):
                 if (move[0] == "SPAWN"):
                     continue
             
-            temp_board = make_board(input, move, player)
-
+            temp_board = make_board(board, move, player)
             eval_value = evaluate_state(temp_board, player, enemy)
 
             if (eval_value > max_eval):
@@ -134,8 +131,8 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
         final_moves = best_moves[-3:]
 
         for move in final_moves:
-            temp_board = make_board(input, move, player)
-            value = mini_max(input, 10, False, player, enemy, game_state)
+            temp_board = make_board(board, move, player)
+            value = mini_max(board, 10, False, player, enemy, game_state)
             if (value > best_value):
                 best_value = value
                 best_move = move
@@ -143,27 +140,27 @@ def make_move(input: dict[tuple, tuple], player: str, enemy, game_state):
 
         if len(playerCell_list) == 1:
             if total_power >= 48:
-                return simple_spread(input, playerCell, direction)
-            return spawn(input, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
+                return simple_spread(board, playerCell, direction)
+            return spawn(board, (random.randint(0, 6), random.randint(0, 6)), player, enemy, game_state)
 
         if best_move[0] == "SPAWN":
-            return spawn(input, best_move[1], player, enemy, game_state)
+            return spawn(board, best_move[1], player, enemy, game_state)
                 
         elif best_move[0] == "SPREAD":
-            return simple_spread(input, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
+            return simple_spread(board, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
 
 def simple_spread(board: dict[tuple, tuple], playerCell, direction):
     return SpreadAction(HexPos(playerCell[0], playerCell[1]), HexDir(direction))
 
-def coord_list(input, player):
+def coord_list(board, player):
     result_list = list()
-
-    for cell in input.keys():
-        if input[cell][0] == player:
+    for cell in board.keys():
+        if board[cell][0] == player:
             result_list.append(cell)
     return result_list
 
-def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy,game_state):
+
+def find_closest_cell(board: dict[tuple,tuple], cell: tuple, enemy, game_state):
     directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
     visited = []
     queue = PriorityQueue()
@@ -173,8 +170,8 @@ def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy,game_state):
     # A* (kind of)search algorithm
     while queue:
         current_dist, current_cell = queue.get()
-        if current_cell in input:
-            if input[current_cell][0] == enemy:
+        if current_cell in board:
+            if board[current_cell][0] == enemy:
                 return current_cell
 
         for d in directions:
@@ -182,8 +179,8 @@ def find_closest_cell(input: dict[tuple,tuple], cell: tuple, enemy,game_state):
             if next_cell not in visited:
                 visited.append(next_cell)
                 # calculate the distance to the target cell using a heuristic function
-                # estimated_dist = calculate_heuristic(next_cell, input, enemy)
-                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, input, enemy)
+                # estimated_dist = calculate_heuristic(next_cell, board, enemy)
+                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, board, enemy)
                 # add the cell to the priority queue using heuristic as priority
                 queue.put((estimated_dist, next_cell))
 
@@ -209,10 +206,8 @@ def determine_next_cell(current_cell: tuple, direction: tuple):
 
     return (next_x, next_y)
 
-
-
-def calculate_heuristic(cell: tuple, input: dict[tuple, tuple], enemy):
-    enemyCell_list = coord_list(input, enemy)
+def calculate_heuristic(cell: tuple, board: dict[tuple, tuple], enemy):
+    enemyCell_list = coord_list(board, enemy)
 
     # print("blueCell_list")
     # print(blueCell_list)
@@ -303,29 +298,29 @@ def determine_direction(start: tuple, target: tuple):
         else:  # dy > 0
             return (-1, 1)  # south
 
-def spread(input: dict[tuple, tuple], action: tuple, colour):
+def spread(board: dict[tuple, tuple], action: tuple, colour):
     cell = (action[0], action[1])
     direction = (action[2], action[3])
-    if cell in input:
-        power = input[cell][1]
+    if cell in board:
+        power = board[cell][1]
         current_cell = cell
 
         # iterate through the cells that are to be covered, and check for blue cells
         for i in range(power):
             next_cell = determine_next_cell(current_cell, direction)
-            if next_cell in input:
-                next_power = input[next_cell][1]
+            if next_cell in board:
+                next_power = board[next_cell][1]
                 # if cell to spread to has power of 6, empty cell
                 if next_power == 6:
-                    input.pop(next_cell)
+                    board.pop(next_cell)
                 # if blue cell -> capture, if red cell -> update cells to reflect board state
                 else:
-                    input[next_cell] = (colour, next_power + 1)
+                    board[next_cell] = (colour, next_power + 1)
             else:
-                input[next_cell] = (colour, 1)
+                board[next_cell] = (colour, 1)
             current_cell = next_cell
         # update cell -> empty it
-        input.pop(cell)
+        board.pop(cell)
 
 def count_power(board: dict[tuple, tuple]):
     total_power = 0
@@ -342,14 +337,12 @@ def count_color_power(board: dict[tuple, tuple], color):
             total_power += values[index][1]
     return total_power
 
-
-
 # mini max stuff
 
-def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
+def mini_max(board: dict[tuple, tuple], depth, max_player, player, enemy, game_state):
     # base case (game over)
     if (depth ==  0) or (game_over(player, enemy, game_state)):
-        return evaluate_state(input, player, enemy)
+        return evaluate_state(board, player, enemy)
     
     best_moves = []
     # current player is to be maximised
@@ -361,11 +354,11 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
         # general moves to make on the board
         # two types, Spawn or spread (they need to be identified)
         # actions can be a list of tuples, where spawn and spread moves are distinguished
-        moves = generate_moves(input, player)
+        moves = generate_moves(board, player)
 
         # get best three moves
         for move in moves:
-            temp_board = make_board(input, move, player)
+            temp_board = make_board(board, move, player)
 
             eval_value = evaluate_state(temp_board, player, enemy)
 
@@ -379,7 +372,7 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 
         
         for move in final_moves:
-            temp_board = make_board(input, move, player)
+            temp_board = make_board(board, move, player)
             max_eval = max(max_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state))
 
         return max_eval
@@ -387,10 +380,10 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
     else:
         min_eval = float('inf')
 
-        moves = generate_moves(input, enemy)
+        moves = generate_moves(board, enemy)
 
         for move in moves:
-            temp_board = make_board(input, move, player)
+            temp_board = make_board(board, move, enemy)
 
             eval_value = evaluate_state(temp_board, player, enemy)
 
@@ -401,13 +394,13 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
         final_moves = best_moves[-3:]
         
         for move in final_moves:
-            temp_board = make_board(input, move, player)
+            temp_board = make_board(board, move, player)
             min_eval = min(min_eval, mini_max(temp_board, depth - 1, True, player, enemy, game_state))
 
         return min_eval
 
-def make_board(input, move, player):
-    temp_board = input.copy()
+def make_board(board, move, player):
+    temp_board = board.copy()
 
     if move[0] == "SPAWN":
         temp_board[move[1]] = (player, 1)
@@ -425,30 +418,92 @@ def game_over(player, enemy, game_state):
     else:
         return False
 
-
 def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
     # The below Evaluation function is completely made up!!!!!!
 
-    # Weights for power distance
+    # Weights for evaluation components
     power_weight = 1
+    cell_dominance_weight = 0.5
+    Mobility_weight = 0.5
+
+    # vulnerability metric ?
+    vulnerability_weight = 1
+    # position metric ?
+    position_weight = 1
+
+
     # calculate some board metrics
+
     # Also include late / early game calculations / distnce or enemy cells?
+
+    # Power Eval
     player_power = count_color_power(board, player)
     enemy_power = count_color_power(board, enemy)
+    power_eval = power_weight * (player_power - enemy_power)
+
+    # Board Dominance Eval
+    player_cells = len(coord_list(board, player))
+    enemy_cells = len(coord_list(board, enemy))
+    empty_cells = len(get_spawn_options(board))
+
+    player_dom = (player_cells / (player_cells + enemy_cells + empty_cells))
+    enemy_dom = (enemy_cells / (player_cells + enemy_cells + empty_cells))
+    dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))
+
+    # Mobility Eval
+    mobility_eval = (Mobility_weight * (calculate_spread_enemy_cells(board, player, enemy)))
+
     # calculate score / give an evaluation
-    evaluation = (power_weight * (player_power - enemy_power))
+    evaluation = (power_eval + dominance_eval + mobility_eval)
     return evaluation
 
-def generate_moves(input: dict[tuple, tuple], player: str) -> list:
+
+def calculate_spread_enemy_cells(board: dict[tuple, tuple], player: str, enemy: str) -> dict[tuple, int]:
+    directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
+    spread_enemy_cells = {}
+    enemy_count = 0
+    # Iterate over each player cell on the board
+    for player_cell in board:
+        if board[player_cell][0] == player:
+            # enemy_count = 0
+            # Check each direction for potential spread to enemy cells
+            for d in directions:
+                current_cell = player_cell
+                power = board[current_cell][1]
+                distance = 0
+                spread = True
+
+                # Keep spreading until you find your own cell (distance is incorporated)
+                while spread:
+                    adjacent_cell = determine_next_cell(current_cell, d)
+                    if adjacent_cell in board:
+                        if board[adjacent_cell][0] == enemy:
+                            if distance <= power:
+                                enemy_count += 1
+                            spread = False
+                        elif board[adjacent_cell][0] == player:
+                            # Stop spreading if a player cell is encountered
+                            spread = False
+                        else:
+                            distance += 1
+                            if distance > power:
+                                spread = False
+                    else:
+                        spread = False
+                    current_cell = adjacent_cell
+            spread_enemy_cells[player_cell] = enemy_count
+    return enemy_count
+
+def generate_moves(board: dict[tuple, tuple], player: str) -> list:
     moves = []
     # generate moves for spawning a new piece
     # get a list of empty cells which can be spawned on
-    empty_cells = get_spawn_options(input)
+    empty_cells = get_spawn_options(board)
     for cell in empty_cells:
         moves.append(("SPAWN",(cell[0], cell[1])))
 
     # generate moves for spreading existing pieces
-    player_cells = coord_list(input, player)
+    player_cells = coord_list(board, player)
     for cell in player_cells:
         directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
         for direction in directions:
@@ -456,10 +511,10 @@ def generate_moves(input: dict[tuple, tuple], player: str) -> list:
     return moves
 
 
-def get_spawn_options(input: dict[tuple, tuple]) -> list:
+def get_spawn_options(board: dict[tuple, tuple]) -> list:
     # get a list of all empty cells which can be spawned on
     empty_cells = []
-    occupied_cells = set(input.keys())
+    occupied_cells = set(board.keys())
     for row in range(7):
         for col in range(7):
             cell = (row, col)
