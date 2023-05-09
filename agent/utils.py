@@ -85,7 +85,7 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # essentially random moves regardless of player
 # need to turn them to greedy moves with use of heuristic
 
-def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
+def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy: str, game_state):
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
@@ -160,8 +160,8 @@ def find_closest_cell(board: dict[tuple,tuple], cell: tuple, enemy, game_state):
             if next_cell not in visited:
                 visited.append(next_cell)
                 # calculate the distance to the target cell using a heuristic function
-                # estimated_dist = calculate_heuristic(next_cell, board, enemy)
-                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, board, enemy)
+                estimated_dist = calculate_heuristic(next_cell, board, enemy)
+                # estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, board, enemy)
                 # add the cell to the priority queue using heuristic as priority
                 queue.put((estimated_dist, next_cell))
 
@@ -358,6 +358,11 @@ def mini_max(input: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 
         return min_eval
 
+
+
+
+
+
 def make_board(board, move, player):
     temp_board = board.copy()
 
@@ -403,11 +408,18 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
 
     player_dom = (player_cells / (player_cells + enemy_cells + empty_cells))
     enemy_dom = (enemy_cells / (player_cells + enemy_cells + empty_cells))
-    dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))
+    dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))*10
+
+
 
     # Mobility Eval
     mobility_eval = (Mobility_weight * (calculate_spread_enemy_cells(board, player, enemy)))
     vulnerability_eval = (vulnerability_weight * (calculate_spread_enemy_cells(board, enemy, player)))
+
+    # print(power_eval)
+    # print(dominance_eval)
+    # print(mobility_eval)
+    # print(vulnerability_eval)
 
     # calculate score / give an evaluation
     evaluation = (power_eval + dominance_eval + mobility_eval + vulnerability_eval)
