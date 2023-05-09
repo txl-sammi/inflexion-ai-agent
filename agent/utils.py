@@ -85,7 +85,7 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
 # essentially random moves regardless of player
 # need to turn them to greedy moves with use of heuristic
 
-def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
+def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy: str, game_state):
     if coord in board:
         while coord in board:
             coord = (random.randint(0, 6), random.randint(0, 6))
@@ -145,7 +145,6 @@ def make_move(board: dict[tuple, tuple], player: str, enemy, game_state):
 
         if best_move[0] == "SPAWN":
             return spawn(board, best_move[1], player, enemy, game_state)
-                
         elif best_move[0] == "SPREAD":
             return simple_spread(board, (best_move[1][0], best_move[1][1]), HexDir((best_move[1][2], best_move[1][3])))
 
@@ -179,8 +178,8 @@ def find_closest_cell(board: dict[tuple,tuple], cell: tuple, enemy, game_state):
             if next_cell not in visited:
                 visited.append(next_cell)
                 # calculate the distance to the target cell using a heuristic function
-                # estimated_dist = calculate_heuristic(next_cell, board, enemy)
-                estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, board, enemy)
+                estimated_dist = calculate_heuristic(next_cell, board, enemy)
+                # estimated_dist = current_dist + 1 + calculate_heuristic(next_cell, board, enemy)
                 # add the cell to the priority queue using heuristic as priority
                 queue.put((estimated_dist, next_cell))
 
@@ -343,7 +342,7 @@ def mini_max(board: dict[tuple, tuple], depth, max_player, player, enemy, game_s
     # base case (game over)
     if (depth ==  0) or (game_over(player, enemy, game_state)):
         return evaluate_state(board, player, enemy)
-    
+
     best_moves = []
     # current player is to be maximised
     if max_player == True:
@@ -364,13 +363,13 @@ def mini_max(board: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 
             if (eval_value > max_eval):
                 max_eval = eval_value
-                best_moves.append(move)     
-        
+                best_moves.append(move)
+
         final_moves = best_moves[-5:]
 
         # then test other board states
 
-        
+
         for move in final_moves:
             temp_board = make_board(board, move, player)
             max_eval = max(max_eval, mini_max(temp_board, depth - 1, False, player, enemy, game_state))
@@ -389,15 +388,20 @@ def mini_max(board: dict[tuple, tuple], depth, max_player, player, enemy, game_s
 
             if (eval_value > min_eval):
                 min_eval = eval_value
-                best_moves.append(move)     
-        
+                best_moves.append(move)
+
         final_moves = best_moves[-3:]
-        
+
         for move in final_moves:
             temp_board = make_board(board, move, player)
             min_eval = min(min_eval, mini_max(temp_board, depth - 1, True, player, enemy, game_state))
 
         return min_eval
+
+
+
+
+
 
 def make_board(board, move, player):
     temp_board = board.copy()
@@ -446,11 +450,18 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
 
     player_dom = (player_cells / (player_cells + enemy_cells + empty_cells))
     enemy_dom = (enemy_cells / (player_cells + enemy_cells + empty_cells))
-    dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))
+    dominance_eval = (cell_dominance_weight * (player_dom + enemy_dom))*10
+
+
 
     # Mobility Eval
     mobility_eval = (Mobility_weight * (calculate_spread_enemy_cells(board, player, enemy)))
     vulnerability_eval = (vulnerability_weight * (calculate_spread_enemy_cells(board, enemy, player)))
+
+    # print(power_eval)
+    # print(dominance_eval)
+    # print(mobility_eval)
+    # print(vulnerability_eval)
 
     # calculate score / give an evaluation
     evaluation = (power_eval + dominance_eval + mobility_eval + vulnerability_eval)

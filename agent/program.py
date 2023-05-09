@@ -40,7 +40,6 @@ class Agent:
         Return the next action to take.
         """
         if (self._round == 0 or self._round == 1): #first move
-
             self._round += 1
             center_coords = [(3, 3), (3, 4), (4, 2), (4, 3), (4, 4), (5, 3)]
             spawn_coord = random.choice(center_coords)
@@ -49,13 +48,10 @@ class Agent:
             self._round += 1
             return make_move(self.board, self._player, self._enemy,self)
 
-
-
     def turn(self, color: PlayerColor, action: Action, **referee: dict):
         """
         Update the agent with the last player's action.
         """
-
         match action:
             case SpawnAction(cell):
                 self.board[cell.r, cell.q] = (color.name, 1)
