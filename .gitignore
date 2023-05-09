@@ -52,3 +52,6 @@ heuristic/__pycache__/__init__.cpython-311.pyc
 heuristic/__pycache__/__init__.cpython-310.pyc
 heuristic/__pycache__/program.cpython-310.pyc
 heuristic/__pycache__/utils.cpython-310.pyc
+abminimax/__pycache__/utils.cpython-311.pyc
+abminimax/__pycache__/program.cpython-311.pyc
+abminimax/__pycache__/__init__.cpython-311.pyc
