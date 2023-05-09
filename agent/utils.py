@@ -422,12 +422,10 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
     # The below Evaluation function is completely made up!!!!!!
 
     # Weights for evaluation components
-    power_weight = 1
+    power_weight = 0.5
     cell_dominance_weight = 0.5
-    Mobility_weight = 0.5
-
-    # vulnerability metric ?
-    vulnerability_weight = 1
+    Mobility_weight = 1
+    vulnerability_weight = -0.5
     # position metric ?
     position_weight = 1
 
@@ -452,9 +450,10 @@ def evaluate_state(board: dict[tuple, tuple], player: str, enemy: str) -> int:
 
     # Mobility Eval
     mobility_eval = (Mobility_weight * (calculate_spread_enemy_cells(board, player, enemy)))
+    vulnerability_eval = (vulnerability_weight * (calculate_spread_enemy_cells(board, enemy, player)))
 
     # calculate score / give an evaluation
-    evaluation = (power_eval + dominance_eval + mobility_eval)
+    evaluation = (power_eval + dominance_eval + mobility_eval + vulnerability_eval)
     return evaluation
 
 
