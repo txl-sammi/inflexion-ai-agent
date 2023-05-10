@@ -48,10 +48,13 @@ class Agent:
             self._round += 1
             return make_move(self.board, self._player, self._enemy,self)
 
+
+
     def turn(self, color: PlayerColor, action: Action, **referee: dict):
         """
         Update the agent with the last player's action.
         """
+
         match action:
             case SpawnAction(cell):
                 self.board[cell.r, cell.q] = (color.name, 1)
@@ -61,3 +64,5 @@ class Agent:
                 self._board = spread(self.board, (cell.r, cell.q, direction.value.r, direction.value.q), color.name)
                 print(f"Testing: {color} SPREAD from {cell}, {direction}")
                 pass
+
+
