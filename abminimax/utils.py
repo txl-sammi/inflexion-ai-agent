@@ -80,10 +80,35 @@ def render_board(board: dict[tuple, tuple], ansi=False) -> str:
         output += "\n"
     return output
 
+def get_neighbors(coord: tuple):
+    directions = [(0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0)]
+    neighbors = list()
+
+    for direction in directions:
+        neighbors.append((determine_next_cell(coord, direction)))
+    # neighbors.append(coord)
+    return neighbors
+
+
 def spawn(board: dict[tuple, tuple], coord: tuple, player: str, enemy, game_state):
     if coord in board:
-        while coord in board:
-            coord = (random.randint(0, 6), random.randint(0, 6))
+        neighbors = (get_neighbors(coord))
+        # print(neighbors)
+        enemy_cood_list = coord_list(board, enemy)
+        enemy_cood_list.append(coord)
+        # print(enemy_cood_list)
+        # random_neighbor = random.choice(neighbors)
+        for neighbor in neighbors:
+            if (neighbor in board) and \
+                    (board[neighbor][0] == player) and \
+                    (neighbor not in enemy_cood_list)\
+                    and ():
+                coord = neighbor
+                break
+        else:
+            while coord in board:
+                coord = (random.randint(0, 6), random.randint(0, 6))
+
     board[coord] = (player, 1)
     return SpawnAction(HexPos(coord[0], coord[1]))
 
